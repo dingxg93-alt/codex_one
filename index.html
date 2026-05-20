@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>七个番茄时钟</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="ambient-field" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <main class="app-shell" data-mode="focus">
+      <header class="topbar" aria-label="应用信息">
+        <div>
+          <p class="eyebrow">seven</p>
+          <h1>七个番茄时钟</h1>
+        </div>
+      </header>
+
+      <section class="timer-panel" aria-label="计时器">
+        <div class="panel-light" aria-hidden="true"></div>
+        <div class="mode-tabs" role="tablist" aria-label="计时模式">
+          <button class="mode-tab" id="shortBreakTab" type="button" role="tab" aria-selected="false" data-mode-target="shortBreak">
+            <span aria-hidden="true">◆</span>
+            短休
+          </button>
+          <button class="mode-tab" id="longBreakTab" type="button" role="tab" aria-selected="false" data-mode-target="longBreak">
+            <span aria-hidden="true">■</span>
+            长休
+          </button>
+          <button class="mode-tab is-active" id="focusTab" type="button" role="tab" aria-selected="true" data-mode-target="focus">
+            <span aria-hidden="true">●</span>
+            专注
+          </button>
+        </div>
+
+        <div class="timer-display" aria-live="polite">
+          <div class="timer-core">
+            <div class="timer-ring" aria-hidden="true"></div>
+            <p class="status-text" id="statusText">准备开始专注</p>
+            <time class="time-text" id="timeText" datetime="PT25M">25:00</time>
+          </div>
+        </div>
+
+        <div class="controls" aria-label="计时控制">
+          <button class="control-button primary" id="startPauseButton" type="button">
+            <span class="button-icon" aria-hidden="true">▶</span>
+            <span id="startPauseText">开始</span>
+          </button>
+          <button class="control-button" id="resetButton" type="button">
+            <span class="button-icon" aria-hidden="true">↺</span>
+            重置
+          </button>
+          <button class="control-button" id="skipButton" type="button">
+            <span class="button-icon" aria-hidden="true">↷</span>
+            跳过
+          </button>
+        </div>
+
+        <div class="progress-wrap" aria-label="当前轮次进度">
+          <div class="progress-copy">
+            <span id="roundText">第 1 / 4 轮</span>
+            <span id="nextText">完成后进入短休</span>
+          </div>
+          <div class="round-dots" id="roundDots" aria-hidden="true"></div>
+        </div>
+      </section>
+
+      <details class="settings-panel">
+        <summary>
+          <span>设置</span>
+          <span class="summary-hint">调整节奏</span>
+        </summary>
+        <form class="settings-grid" id="settingsForm">
+          <label>
+            专注分钟
+            <input id="focusMinutes" name="focusMinutes" type="number" min="1" max="180" inputmode="numeric">
+          </label>
+          <label>
+            短休分钟
+            <input id="shortBreakMinutes" name="shortBreakMinutes" type="number" min="1" max="60" inputmode="numeric">
+          </label>
+          <label>
+            长休分钟
+            <input id="longBreakMinutes" name="longBreakMinutes" type="number" min="1" max="120" inputmode="numeric">
+          </label>
+          <label>
+            长休间隔
+            <input id="longBreakInterval" name="longBreakInterval" type="number" min="2" max="12" inputmode="numeric">
+          </label>
+        </form>
+        <p class="settings-note" id="settingsNote">设置会自动保存在本机浏览器。</p>
+      </details>
+    </main>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>
