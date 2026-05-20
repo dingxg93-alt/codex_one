@@ -7,15 +7,13 @@
       ready: "准备开始专注",
       running: "保持专注",
       paused: "专注已暂停",
-      complete: "专注完成",
       setting: "focusMinutes",
     },
     shortBreak: {
       label: "短休",
       ready: "准备短休",
-      running: "短休一下",
+      running: "放松一下",
       paused: "短休已暂停",
-      complete: "短休结束",
       setting: "shortBreakMinutes",
     },
     longBreak: {
@@ -23,7 +21,6 @@
       ready: "准备长休",
       running: "好好恢复",
       paused: "长休已暂停",
-      complete: "长休结束",
       setting: "longBreakMinutes",
     },
   };
@@ -36,13 +33,15 @@
   };
 
   const STORAGE_KEYS = {
-    settings: "pomodoro.settings.v1",
-    stats: "pomodoro.stats.v1",
+    settings: "pomodoro.settings.v2",
+    stats: "pomodoro.stats.v2",
+    task: "pomodoro.task.v1",
   };
 
   const root = document.querySelector(".app-shell");
   const timeText = document.querySelector("#timeText");
   const statusText = document.querySelector("#statusText");
+  const subStatusText = document.querySelector("#subStatusText");
   const startPauseButton = document.querySelector("#startPauseButton");
   const startPauseText = document.querySelector("#startPauseText");
   const resetButton = document.querySelector("#resetButton");
@@ -55,6 +54,11 @@
   const cycleMeta = document.querySelector("#cycleMeta");
   const settingsForm = document.querySelector("#settingsForm");
   const settingsNote = document.querySelector("#settingsNote");
+  const taskInput = document.querySelector("#taskInput");
+  const todayCountBadge = document.querySelector("#todayCountBadge");
+  const todayCountText = document.querySelector("#todayCountText");
+  const todayMinutesText = document.querySelector("#todayMinutesText");
+  const clearStatsButton = document.querySelector("#clearStatsButton");
   const modeTabs = Array.from(document.querySelectorAll("[data-mode-target]"));
 
   const settingsInputs = {
@@ -78,6 +82,7 @@
   function initialize() {
     fillSettingsForm();
     resetDailyStatsIfNeeded();
+    taskInput.value = loadTask();
     bindEvents();
     render();
   }
@@ -86,6 +91,8 @@
     startPauseButton.addEventListener("click", toggleStartPause);
     resetButton.addEventListener("click", resetTimer);
     skipButton.addEventListener("click", skipCurrentMode);
+    clearStatsButton.addEventListener("click", clearTodayStats);
+    taskInput.addEventListener("input", saveTask);
 
     modeTabs.forEach((tab) => {
       tab.addEventListener("click", () => {
@@ -161,6 +168,7 @@
     if (mode === "focus") {
       if (countCompletion) {
         stats.todayCount += 1;
+        stats.todayFocusMinutes += settings.focusMinutes;
         stats.completedInSet += 1;
         stats.date = getTodayKey();
         saveStats();
@@ -186,7 +194,7 @@
     remainingMs = getModeDuration(mode);
 
     if (manual) {
-      document.title = "七个番茄时钟";
+      document.title = "七个番茄钟";
     }
 
     render();
@@ -194,6 +202,7 @@
 
   function handleSettingsInput(event) {
     const input = event.target;
+
     if (!(input instanceof HTMLInputElement) || !input.name) {
       return;
     }
@@ -206,13 +215,21 @@
 
     settings[input.name] = value;
     input.value = String(value);
+    stats.completedInSet = clamp(stats.completedInSet, 0, settings.longBreakInterval);
     saveSettings();
+    saveStats();
 
     if (state !== "running") {
       remainingMs = getModeDuration(mode);
     }
 
     showSavedNote();
+    render();
+  }
+
+  function clearTodayStats() {
+    stats = createEmptyStats();
+    saveStats();
     render();
   }
 
@@ -223,6 +240,7 @@
     timeText.textContent = display;
     timeText.dateTime = `PT${seconds}S`;
     statusText.textContent = getStatusText();
+    subStatusText.textContent = getSubStatusText();
     startPauseText.textContent = state === "running" ? "暂停" : state === "paused" ? "继续" : "开始";
     startPauseButton.querySelector(".button-icon").textContent = state === "running" ? "Ⅱ" : "▶";
     root.style.setProperty("--progress", String(getProgress()));
@@ -230,6 +248,7 @@
     renderTabs();
     renderRounds();
     renderMeta();
+    renderStats();
     renderDocumentTitle(display);
   }
 
@@ -275,16 +294,23 @@
     cycleMeta.textContent = mode === "focus" ? `${currentRound} / ${interval}` : `${stats.completedInSet} / ${interval}`;
   }
 
-  function renderDocumentTitle(display) {
-    if (state === "running") {
-      document.title = `${display} - ${MODES[mode].label}`;
-      return;
-    }
+  function renderStats() {
+    todayCountBadge.textContent = String(stats.todayCount);
+    todayCountText.textContent = String(stats.todayCount);
+    todayMinutesText.textContent = `${stats.todayFocusMinutes} 分钟`;
+  }
 
-    document.title = "七个番茄时钟";
+  function renderDocumentTitle(display) {
+    document.title = state === "running" ? `${display} - ${MODES[mode].label}` : "七个番茄钟";
   }
 
   function getStatusText() {
+    const task = taskInput.value.trim();
+
+    if (mode === "focus" && state === "running" && task) {
+      return `正在推进：${task}`;
+    }
+
     if (state === "running") {
       return MODES[mode].running;
     }
@@ -294,6 +320,14 @@
     }
 
     return MODES[mode].ready;
+  }
+
+  function getSubStatusText() {
+    if (mode !== "focus") {
+      return "休息结束后回到专注";
+    }
+
+    return stats.completedInSet + 1 >= settings.longBreakInterval ? "完成后进入长休" : "完成后进入短休";
   }
 
   function getModeDuration(targetMode) {
@@ -361,6 +395,7 @@
     return {
       date: today,
       todayCount: Math.max(0, toInt(nextStats.todayCount, 0)),
+      todayFocusMinutes: Math.max(0, toInt(nextStats.todayFocusMinutes, 0)),
       completedInSet: clamp(toInt(nextStats.completedInSet, 0), 0, settings.longBreakInterval),
     };
   }
@@ -376,21 +411,32 @@
     return {
       date: getTodayKey(),
       todayCount: 0,
+      todayFocusMinutes: 0,
       completedInSet: 0,
     };
   }
 
+  function loadTask() {
+    return localStorage.getItem(STORAGE_KEYS.task) || "";
+  }
+
+  function saveTask() {
+    localStorage.setItem(STORAGE_KEYS.task, taskInput.value.trim());
+    render();
+  }
+
   function showSavedNote() {
-    settingsNote.textContent = "已保存。";
+    settingsNote.textContent = "已保存";
     window.clearTimeout(showSavedNote.timeoutId);
     showSavedNote.timeoutId = window.setTimeout(() => {
-      settingsNote.textContent = "设置会自动保存在本机浏览器。";
+      settingsNote.textContent = "自动保存";
     }, 1200);
   }
 
   function ensureAudioContext() {
     if (!audioContext) {
       const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+
       if (AudioContextConstructor) {
         audioContext = new AudioContextConstructor();
       }
@@ -407,6 +453,7 @@
     }
 
     const now = audioContext.currentTime;
+
     [523.25, 659.25, 783.99].forEach((frequency, index) => {
       const oscillator = audioContext.createOscillator();
       const gain = audioContext.createGain();
@@ -415,7 +462,7 @@
       oscillator.type = "sine";
       oscillator.frequency.value = frequency;
       gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(0.12, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.1, start + 0.02);
       gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.18);
       oscillator.connect(gain).connect(audioContext.destination);
       oscillator.start(start);
