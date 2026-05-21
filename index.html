@@ -18,10 +18,33 @@
           <p class="eyebrow">seven</p>
           <h1>七个番茄时钟</h1>
         </div>
+        <div class="brand-mark" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
       </header>
 
       <section class="timer-panel" aria-label="计时器">
         <div class="panel-light" aria-hidden="true"></div>
+        <div class="session-strip" aria-label="当前节奏">
+          <span>
+            <small>模式</small>
+            <strong id="modeMeta">专注</strong>
+          </span>
+          <span>
+            <small>节奏</small>
+            <strong id="rhythmMeta">25 / 5 / 15</strong>
+          </span>
+          <span>
+            <small>循环</small>
+            <strong id="cycleMeta">1 / 4</strong>
+          </span>
+        </div>
         <div class="mode-tabs" role="tablist" aria-label="计时模式">
           <button class="mode-tab" id="shortBreakTab" type="button" role="tab" aria-selected="false" data-mode-target="shortBreak">
             <span aria-hidden="true">◆</span>
@@ -39,6 +62,7 @@
 
         <div class="timer-display" aria-live="polite">
           <div class="timer-core">
+            <div class="timer-aura" aria-hidden="true"></div>
             <div class="timer-ring" aria-hidden="true"></div>
             <p class="status-text" id="statusText">准备开始专注</p>
             <time class="time-text" id="timeText" datetime="PT25M">25:00</time>
@@ -64,6 +88,9 @@
           <div class="progress-copy">
             <span id="roundText">第 1 / 4 轮</span>
             <span id="nextText">完成后进入短休</span>
+          </div>
+          <div class="progress-track" aria-hidden="true">
+            <span></span>
           </div>
           <div class="round-dots" id="roundDots" aria-hidden="true"></div>
         </div>
