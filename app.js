@@ -50,6 +50,9 @@
   const roundText = document.querySelector("#roundText");
   const nextText = document.querySelector("#nextText");
   const roundDots = document.querySelector("#roundDots");
+  const modeMeta = document.querySelector("#modeMeta");
+  const rhythmMeta = document.querySelector("#rhythmMeta");
+  const cycleMeta = document.querySelector("#cycleMeta");
   const settingsForm = document.querySelector("#settingsForm");
   const settingsNote = document.querySelector("#settingsNote");
   const modeTabs = Array.from(document.querySelectorAll("[data-mode-target]"));
@@ -222,9 +225,11 @@
     statusText.textContent = getStatusText();
     startPauseText.textContent = state === "running" ? "暂停" : state === "paused" ? "继续" : "开始";
     startPauseButton.querySelector(".button-icon").textContent = state === "running" ? "Ⅱ" : "▶";
+    root.style.setProperty("--progress", String(getProgress()));
 
     renderTabs();
     renderRounds();
+    renderMeta();
     renderDocumentTitle(display);
   }
 
@@ -261,6 +266,15 @@
     }
   }
 
+  function renderMeta() {
+    const interval = settings.longBreakInterval;
+    const currentRound = Math.min(stats.completedInSet + 1, interval);
+
+    modeMeta.textContent = MODES[mode].label;
+    rhythmMeta.textContent = `${settings.focusMinutes} / ${settings.shortBreakMinutes} / ${settings.longBreakMinutes}`;
+    cycleMeta.textContent = mode === "focus" ? `${currentRound} / ${interval}` : `${stats.completedInSet} / ${interval}`;
+  }
+
   function renderDocumentTitle(display) {
     if (state === "running") {
       document.title = `${display} - ${MODES[mode].label}`;
@@ -284,6 +298,16 @@
 
   function getModeDuration(targetMode) {
     return settings[MODES[targetMode].setting] * 60 * 1000;
+  }
+
+  function getProgress() {
+    const totalMs = getModeDuration(mode);
+
+    if (totalMs <= 0) {
+      return 0;
+    }
+
+    return clamp(1 - remainingMs / totalMs, 0, 1);
   }
 
   function fillSettingsForm() {
